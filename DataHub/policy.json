@@ -1,0 +1,58 @@
+{
+    "id": "lorawan-application-cleaner",
+    "matching": {
+        "topicFilter": "application/c7681ed7-f0fe-4238-bf1c-677edbef05f0/device/+/event/up"
+    },
+    "validation": {
+        "validators": [
+            {
+                "type": "schema",
+                "arguments": {
+                    "strategy": "ALL_OF",
+                    "schemas": [
+                        {
+                            "schemaId": "json-schema",
+                            "version": "latest"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "onSuccess": {
+        "pipeline": [
+            {
+                "id": "deserialize",
+                "functionId": "Serdes.deserialize",
+                "arguments": {
+                    "schemaVersion": "latest",
+                    "schemaId": "json-schema"
+                }
+            },
+            {
+                "id": "lorawan-cleaning",
+                "functionId": "fn:lorawan-cleaning:latest",
+                "arguments": {}
+            },
+            {
+                "id": "serialize",
+                "functionId": "Serdes.serialize",
+                "arguments": {
+                    "schemaVersion": "latest",
+                    "schemaId": "json-schema"
+                }
+            }
+        ]
+    },
+    "onFailure": {
+        "pipeline": [
+            {
+                "id": "drop-invalid-message",
+                "functionId": "Mqtt.drop",
+                "arguments": {
+                    "reasonString": "Your client ${clientId} sent invalid data according to the schema: ${validationResult}."
+                }
+            }
+        ]
+    }
+}
